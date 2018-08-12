@@ -13,6 +13,7 @@ npm install selfsigned-ca
 Following demo creates CA Root certificate and uses it to sign second certificate which is then used to start HTTPS server with. CA Root certificate is also installed to system's keychain so that all signed certs are automatically trusted. On a second run, the localhost certificate is loaded and used straight away or new one is generated and signed.
 
 ```js
+var https = require('https')
 var {create, CertDescriptor} = require('./index.js')
 
 loadOrCreateCerts()
@@ -84,7 +85,6 @@ async function loadOrCreateCerts() {
 }
 
 function createHttpsServer(devCert) {
-  var https = require('https')
   var server = https.createServer(devCert, (req, res) => {
     res.writeHead(200)
     res.end('hello world\n')

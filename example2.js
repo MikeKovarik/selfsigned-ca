@@ -1,3 +1,4 @@
+var https = require('https')
 var {create, CertDescriptor} = require('./index.js')
 
 loadOrCreateCerts()
@@ -69,7 +70,6 @@ async function loadOrCreateCerts() {
 }
 
 function createHttpsServer(devCert) {
-  var https = require('https')
   var server = https.createServer(devCert, (req, res) => {
     res.writeHead(200)
     res.end('hello world\n')
