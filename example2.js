@@ -1,18 +1,3 @@
-# selfsigned-ca
-
-🔑 Generate self-signed certificates and keys and CA certs for use in HTTPS servers.
-
-## Installation
-
-```js
-npm install selfsigned-ca
-```
-
-## Usage
-
-Following demo creates CA Root certificate and uses it to sign second certificate which is then used to start HTTPS server with. CA Root certificate is also installed to system's keychain so that all signed certs are automatically trusted. On a second run, the localhost certificate is loaded and used straight away or new one is generated and signed.
-
-```js
 var {create, CertDescriptor} = require('./index.js')
 
 loadOrCreateCerts()
@@ -91,4 +76,3 @@ function createHttpsServer(devCert) {
   })
   server.listen(443)
 }
-```
