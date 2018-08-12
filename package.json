@@ -1,10 +1,7 @@
 {
   "name": "selfsigned-ca",
-  "version": "1.0.0",
-  "description": "🔑 Generate self-signed certificates and keys and CA certs for use in HTTPS servers.",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "version": "1.0.1",
+  "description": "🔑 Generate self-signed certificates, keys and Root CA for use in HTTPS servers.",
   "author": "Mike Kovařík",
   "license": "MIT",
   "devDependencies": {

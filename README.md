@@ -1,6 +1,6 @@
 # selfsigned-ca
 
-🔑 Generate self-signed certificates and keys and CA certs for use in HTTPS servers.
+🔑 Generate self-signed certificates, keys and Root CA for use in HTTPS servers.
 
 ## Installation
 
@@ -92,3 +92,7 @@ function createHttpsServer(devCert) {
   server.listen(443)
 }
 ```
+
+## License
+
+MIT, Mike Kovařík, Mutiny.cz
