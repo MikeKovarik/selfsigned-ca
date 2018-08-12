@@ -1,5 +1,5 @@
 var https = require('https')
-var {create, CertDescriptor} = require('./index.js')
+var {create, Cert} = require('./index.js')
 var os = require('os')
 var dns = require('dns')
 var util = require('util')
@@ -15,9 +15,11 @@ loadOrCreateCerts()
 	.catch(console.error)
 
 async function loadOrCreateCerts() {
-	var caName = 'anchora.root-ca'
+
 	var lanIp = (await dns.lookup(os.hostname())).address
-	var devName = `anchora.localhost.${lanIp}`
+
+	var caCert  = new Cert('anchora.root-ca')
+	var devCert = new Cert(`anchora.localhost.${lanIp}`)
 
 	var caCertOptions = {
 		days: 9999,
@@ -43,9 +45,6 @@ async function loadOrCreateCerts() {
 			]
 		}]
 	}
-
-	var caCert  = new CertDescriptor(caName)
-	var devCert = new CertDescriptor(devName)
 
 	try {
 		console.log('loading existing dev certificate')

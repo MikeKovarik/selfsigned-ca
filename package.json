@@ -1,6 +1,6 @@
 {
   "name": "selfsigned-ca",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "🔑 Generate self-signed certificates, keys and Root CA for use in HTTPS servers.",
   "author": "Mike Kovařík",
   "license": "MIT",

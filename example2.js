@@ -1,5 +1,5 @@
 var https = require('https')
-var {create, CertDescriptor} = require('./index.js')
+var {create, Cert} = require('./index.js')
 
 loadOrCreateCerts()
   .then(createHttpsServer)
@@ -29,8 +29,8 @@ async function loadOrCreateCerts() {
     }]
   }
 
-  var caCert  = new CertDescriptor(caName)
-  var devCert = new CertDescriptor(devName)
+  var caCert  = new Cert(caName)
+  var devCert = new Cert(devName)
 
   try {
     console.log('loading existing dev certificate')

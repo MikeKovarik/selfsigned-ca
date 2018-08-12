@@ -74,7 +74,7 @@ async function ensureDirectory(directory) {
 }
 
 
-export class CertDescriptor {
+export class Cert {
 
 	constructor(name, dir = './cert') {
 		this.name = name
@@ -242,11 +242,11 @@ export class CertDescriptor {
 }
 
 export function createRootCa(options) {
-	var cert  = new CertDescriptor()
+	var cert  = new Cert()
 	return cert.createRootCa(options)
 }
 
 export function create(options, caCert) {
-	var cert  = new CertDescriptor()
+	var cert  = new Cert()
 	return cert.create(options, caCert)
 }

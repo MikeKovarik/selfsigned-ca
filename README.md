@@ -14,7 +14,7 @@ Following demo creates CA Root certificate and uses it to sign second certificat
 
 ```js
 var https = require('https')
-var {create, CertDescriptor} = require('./index.js')
+var {create, Cert} = require('./index.js')
 
 loadOrCreateCerts()
   .then(createHttpsServer)
@@ -22,8 +22,8 @@ loadOrCreateCerts()
   .catch(console.error)
 
 async function loadOrCreateCerts() {
-  var caName = 'selfsigned.root-ca'
-  var devName = `selfsigned.localhost`
+  var caCert  = new Cert('selfsigned.root-ca')
+  var devCert = new Cert(`selfsigned.localhost`)
 
   var caCertOptions = {
     subject: {
@@ -43,9 +43,6 @@ async function loadOrCreateCerts() {
       ]
     }]
   }
-
-  var caCert  = new CertDescriptor(caName)
-  var devCert = new CertDescriptor(devName)
 
   try {
     console.log('loading existing dev certificate')

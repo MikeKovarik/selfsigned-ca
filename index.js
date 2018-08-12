@@ -81,7 +81,7 @@
 	}
 
 
-	class CertDescriptor {
+	class Cert {
 
 		constructor(name, dir = './cert') {
 			this.name = name;
@@ -249,16 +249,16 @@
 	}
 
 	function createRootCa(options) {
-		var cert  = new CertDescriptor();
+		var cert  = new Cert();
 		return cert.createRootCa(options)
 	}
 
 	function create(options, caCert) {
-		var cert  = new CertDescriptor();
+		var cert  = new Cert();
 		return cert.create(options, caCert)
 	}
 
-	exports.CertDescriptor = CertDescriptor;
+	exports.Cert = Cert;
 	exports.createRootCa = createRootCa;
 	exports.create = create;
 
