@@ -1,8 +1,9 @@
 import forge from 'node-forge'
 import path from 'path'
 import _fs from 'fs'
-var fs = _fs.promises
+import mzfs from 'mz/fs';
 
+var fs = _fs.promises || mzfs
 
 const defaultOptions = {
 	days: 365,
@@ -234,7 +235,7 @@ export class Cert {
 		if (this._certificate) return this._certificate
 		if (this.cert) return this._certificate = forge.pki.certificateFromPem(this.cert)
 	}
-	
+
 	set privateKey(privateKey)   {this._privateKey  = privateKey}
 	set publicKey(publicKey)     {this._publicKey   = publicKey}
 	set certificate(certificate) {this._certificate = certificate}

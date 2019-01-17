@@ -1,15 +1,15 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('node-forge'), require('path'), require('fs')) :
-	typeof define === 'function' && define.amd ? define(['exports', 'node-forge', 'path', 'fs'], factory) :
-	(factory((global['selfsigned-ca'] = {}),global['node-forge'],global.path,global.fs));
-}(this, (function (exports,forge,path,_fs) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('node-forge'), require('path'), require('fs'), require('mz/fs')) :
+	typeof define === 'function' && define.amd ? define(['exports', 'node-forge', 'path', 'fs', 'mz/fs'], factory) :
+	(factory((global['selfsigned-ca'] = {}),global['node-forge'],global.path,global.fs,global.mzfs));
+}(this, (function (exports,forge,path,_fs,mzfs) { 'use strict';
 
 	forge = forge && forge.hasOwnProperty('default') ? forge['default'] : forge;
 	path = path && path.hasOwnProperty('default') ? path['default'] : path;
 	_fs = _fs && _fs.hasOwnProperty('default') ? _fs['default'] : _fs;
+	mzfs = mzfs && mzfs.hasOwnProperty('default') ? mzfs['default'] : mzfs;
 
-	var fs = _fs.promises;
-
+	var fs = _fs.promises || mzfs;
 
 	const defaultOptions = {
 		days: 365,
@@ -241,7 +241,7 @@
 			if (this._certificate) return this._certificate
 			if (this.cert) return this._certificate = forge.pki.certificateFromPem(this.cert)
 		}
-		
+
 		set privateKey(privateKey)   {this._privateKey  = privateKey;}
 		set publicKey(publicKey)     {this._publicKey   = publicKey;}
 		set certificate(certificate) {this._certificate = certificate;}
