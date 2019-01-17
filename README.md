@@ -14,24 +14,70 @@ Following demo creates CA Root certificate and uses it to sign second certificat
 
 ```js
 var https = require('https')
-var {create, Cert} = require('./index.js')
+var {create, Cert} = require('selfsigned-ca')
 
-loadOrCreateCerts()
-  .then(createHttpsServer)
+// Root CA certificate used to sign other certificates.
+// argument(s) point to .crt and .key file paths - ./selfsigned.root-ca.crt & ./selfsigned.root-ca.key
+var rootCaCert  = new Cert('selfsigned.root-ca')
+// The certificate generated for use in the HTTP server. It is signed by the CA certificate.
+// That way you can create any amount of certificates and they will be all trusted as long
+// as the Root CA certificate is trusted (installed to device's keychain).
+// argument(s) point to .crt and .key file paths - ./selfsigned.localhost.crt & ./selfsigned.localhost.key
+var serverCert = new Cert(`selfsigned.localhost`)
+
+serverCert.load()
+  .catch(createCertificate)
+  .then(startHttpsServer)
   .then(() => console.log('certificates ready, server listening'))
   .catch(console.error)
 
-async function loadOrCreateCerts() {
-  var caCert  = new Cert('selfsigned.root-ca')
-  var devCert = new Cert(`selfsigned.localhost`)
+async function createCertificate() {
+  try {
+    // Try to load and use existing CA certificate for signing.
+    console.log('loading root CA certificate')
+    await loadRootCertificate()
+  } catch(err) {
+    console.log(`couldn't load existing CA cert, creating new one`)
+    await createRootCertificate()
+    console.log(`Root CA certificate created, stored and installed`)
+  }
+  console.log('creating server certificate')
+  createServerCertificate()
+  console.log('server certificate created & stored')
+}
 
-  var caCertOptions = {
+function startHttpsServer() {
+  var server = https.createServer(serverCert, (req, res) => {
+    res.writeHead(200)
+    res.end('hello world\n')
+  })
+  server.listen(443)
+}
+
+async function loadRootCertificate() {
+  await rootCaCert.load()
+  if (!await rootCaCert.isInstalled()) {
+    // Make sure the CA is installed to device's keychain so that all server certificates
+    // signed by the CA are automatically trusted and green.
+    await rootCaCert.install()
+  }
+}
+
+async function createRootCertificate() {
+  // Couldn't load existing root CA certificate. Generate new one.
+  await rootCaCert.createRootCa({
     subject: {
       commonName: 'My Trusted Certificate Authority',
     }
-  }
+  })
+  await rootCaCert.save()
+  // Install the newly created CA to device's keychain so that all server certificates
+  // signed by the CA are automatically trusted and green.
+  await rootCaCert.install()
+}
 
-  var devCertOptions = {
+async function createServerCertificate() {
+  var serverCertOptions = {
     subject: {
       commonName: 'localhost',
     },
@@ -43,51 +89,10 @@ async function loadOrCreateCerts() {
       ]
     }]
   }
-
-  try {
-    console.log('loading existing dev certificate')
-    await devCert.load()
-    console.log('loaded dev cert')
-  } catch(err) {
-    console.log('loading dev cert failed, creating new one')
-    try {
-      // Try to load and use existing CA certificate for signing.
-      console.log('loading root CA certificate')
-      await caCert.load()
-      console.log('root CA loaded')
-      if (!await caCert.isInstalled()) {
-        console.log('installing root CA')
-        await caCert.install()
-        console.log('root CA installed')
-      }
-    } catch(err) {
-      console.log(`couldn't load existing CA cert, creating new one`)
-      // Couldn't load existing root CA certificate. Generate new one.
-      await caCert.createRootCa(caCertOptions)
-      console.log('created root CA')
-      await caCert.save()
-      // Install the newly created CA to device's keychain so that all dev certificates
-      // signed by the CA are automatically trusted and green.
-      console.log('installing root CA')
-      await caCert.install()
-      console.log('installed root CA')
-    }
-    console.log(`creating dev certificate`)
-    await devCert.create(devCertOptions, caCert)
-    console.log(`created dev cert`)
-    await devCert.save()
-  }
-
-  return devCert
+  await serverCert.create(serverCertOptions, rootCaCert)
+  await serverCert.save()
 }
 
-function createHttpsServer(devCert) {
-  var server = https.createServer(devCert, (req, res) => {
-    res.writeHead(200)
-    res.end('hello world\n')
-  })
-  server.listen(443)
-}
 ```
 
 ## License

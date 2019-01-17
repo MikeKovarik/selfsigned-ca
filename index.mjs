@@ -1,7 +1,18 @@
 import forge from 'node-forge'
 import path from 'path'
+import util from 'util'
+import cp from 'child_process'
 import _fs from 'fs'
-var fs = _fs.promises
+
+var exec = util.promisify(cp.exec)
+
+if (_fs.promises) {
+	var fs = _fs.promises
+} else {
+	var fs = Object.assign({}, fs)
+	for (let [name, method] of Object.entries(fs))
+		fs[name] = util.promisify(method)
+}
 
 
 const defaultOptions = {
@@ -53,18 +64,6 @@ function getAlgorithm(options) {
 	return algo.create()
 }
 
-function exec(command) {
-	var cp = require('child_process')
-	return new Promise((resolve, reject) => {
-		cp.exec(command, (error, stdout, stderr) => {
-			if (error || stderr)
-				reject(error || stderr)
-			else
-				resolve(stdout)
-		})
-	})
-}
-
 async function ensureDirectory(directory) {
 	try {
 		await fs.stat(directory)
@@ -76,11 +75,13 @@ async function ensureDirectory(directory) {
 
 export class Cert {
 
-	constructor(name, dir = './cert') {
-		this.name = name
-		this.dir = dir
-		this.crtPath = path.join(this.dir, this.name + '.crt')
-		this.keyPath = path.join(this.dir, this.name + '.key')
+	constructor(crtPath, keyPath) {
+		var {dir, base} = path.parse(crtPath)
+		if (base.endsWith('.crt'))  base = base.slice(0, -4)
+		if (base.endsWith('.cert')) base = base.slice(0, -5)
+		this.name = base
+		this.crtPath = crtPath
+		this.keyPath = keyPath || path.join(dir, this.name + '.key')
 	}
 
 	generatePems() {
@@ -95,14 +96,25 @@ export class Cert {
 	}
 
 	async load() {
-		this.cert = await fs.readFile(this.crtPath)
-		this.key  = await fs.readFile(this.keyPath)
+		var [cert, key] = await Promise.all([
+			fs.readFile(this.crtPath),
+			fs.readFile(this.keyPath)
+		])
+		this.cert = cert
+		this.key  = key
 	}
 
 	async save() {
-		await ensureDirectory(this.dir)
-		await fs.writeFile(this.crtPath, this.cert)
-		await fs.writeFile(this.keyPath, this.key)
+		await Promise.all([
+			Promise.all([
+				ensureDirectory(path.dirname(this.crtPath)),
+				fs.writeFile(this.crtPath, this.cert),
+			]),
+			Promise.all([
+				ensureDirectory(path.dirname(this.keyPath)),
+				fs.writeFile(this.keyPath, this.key)
+			])
+		])
 	}
 
 	async install() {
@@ -111,6 +123,7 @@ export class Cert {
 				await this.save()
 				await exec(`certutil -addstore -user -f root "${this.crtPath}"`)
 			case 'darwin':
+				console.warn('selfsigned-ca: darwin is not supported yet')
 				return // TODO
 			default:
 				// copy crt file to
@@ -126,11 +139,13 @@ export class Cert {
 		try {
 			switch (process.platform) {
 				case 'win32':
-					var result = await exec(`certutil -verifystore -user root ${this.serialNumber}`)
-					return result.includes(this.thumbPrint)
+					let {stdout} = await exec(`certutil -verifystore -user root ${this.serialNumber}`)
+					return stdout.includes(this.thumbPrint)
 				case 'darwin':
+					console.warn('selfsigned-ca: darwin is not supported yet')
 					return // TODO
 				default:
+					console.warn('selfsigned-ca: unsupported platform')
 					return // TODO
 			}
 		} catch(err) {
@@ -242,11 +257,11 @@ export class Cert {
 }
 
 export function createRootCa(options) {
-	var cert  = new Cert()
+	var cert = new Cert()
 	return cert.createRootCa(options)
 }
 
 export function create(options, caCert) {
-	var cert  = new Cert()
+	var cert = new Cert()
 	return cert.create(options, caCert)
 }
