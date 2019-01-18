@@ -1,7 +1,7 @@
 import forge from 'node-forge'
 import path from 'path'
 import cp from 'child_process'
-import util from 'util'
+import util, { isBuffer } from 'util'
 import _fs from 'fs'
 
 
@@ -14,62 +14,109 @@ for (let [name, method] of Object.entries(_fs)) {
 		fs[name] = util.promisify(method)
 }
 
+async function ensureDirectory(directory) {
+	try {
+		await fs.stat(directory)
+	} catch(err) {
+		await fs.mkdir(directory)
+	}
+}
+
+
+const LINUX_CERT_DIR = '/usr/share/ca-certificates/extra/'
+
+
+class CertStruct {
+
+	constructor(arg) {
+		if (Buffer.isBuffer(arg))
+			arg = arg.toString()
+		if (typeof arg === 'string') {
+			if (arg.includes('-----BEGIN CERTIFICATE-----'))
+				this.pem = arg
+			else
+				this.path = arg
+		} else if (typeof arg === 'object') {
+			this.fromForgeObject(arg)
+			this.path = arg.path || arg.path
+			this.serialNumber = arg.serialNumber
+			this.pem = arg.pem || arg.cert || arg.data
+		}
+	}
+
+	async ensureCertReadFromFs() {
+		if (!this.path) return
+		this.pem = (await fs.readFile(this.path)).toString()
+	}
+
+	get name() {
+		if (this._name) return this._name
+		if (this.path) {
+			this._name = path.basename(this.path)
+			if (this._name.endsWith('.crt') && this._name.endsWith('.cer'))
+				this._name = this._name.slice(0, -4)
+			else if (this._name.endsWith('.pem'))
+				this._name = this._name.slice(0, -5)
+		} else if (this.certificate) {
+			let attributes = certificate.subject.attributes
+			if (attributes) {
+				var obj = attributes.find(obj => obj.shortName === 'CN')
+						|| attributes.find(obj => obj.shortName === 'O')
+				if (obj)
+					this._name = obj.value.toLowerCase().replace(/\W+/g, '-')
+			}
+		}
+		return this._name
+	}
+
+	get certificate() {
+		if (this._certificate) return this._certificate
+		if (this.pem) return this._certificate = forge.pki.certificateFromPem(this.pem)
+	}
+	set certificate(object) {
+		this._certificate = object
+	}
+
+	get serialNumber() {
+		if (this._serialNumber) return this._serialNumber
+		if (this.certificate) return this._serialNumber = this.certificate.serialNumber
+	}
+	set serialNumber(string) {
+		this._serialNumber = string
+	}
+
+}
+
 // https://manuals.gfi.com/en/kerio/connect/content/server-configuration/ssl-certificates/adding-trusted-root-certificates-to-the-server-1605.html
 export class CertStore {
-
-	static _processArg(input) {
-		if (typeof input === 'string') {
-			input = {crtPath: input}
-		}
-		var {name, serialNumber} = input
-		var crtPath = input.crtPath || input.path
-		//var hash = input.thumbPrint || input.hash
-		//if (hash) hash = hash.toLowerCase()
-		if (name) {
-			if (name.endsWith('.crt') && name.endsWith('.cer'))
-				var filename = name.slice(0, -4)
-			else if (name.endsWith('.cert'))
-				var filename = name.slice(0, -5)
-			else
-				var filename = name
-		} else {
-			var filename = path.parse(crtPath).base
-		}
-		var output = {
-			crtPath,
-			filename,
-			serialNumber,
-			//hash,
-			cert: input.cert || input.data,
-		}
-		return output
-	}
 
 	// Only works on linux (ubuntu, debian).
 	// Finds certificate in /usr/share/ca-certificates/extra/ by its serial number.
 	// Returns path to the certificate if found, otherwise undefined.
 	static async _findLinuxCert(arg) {
-		let filenames = await fs.readdir(`/usr/share/ca-certificates/extra/`)
-		for (let filename of filenames) {
-			let filepath = `/usr/share/ca-certificates/extra/${filename}`
-			let pem = (await fs.readFile(filepath)).toString()
-			let cert = forge.pki.certificateFromPem(pem)
+		await arg.ensureCertReadFromFs()
+		let filenames = await fs.readdir(LINUX_CERT_DIR)
+		for (let fileName of filenames) {
+			let filepath = LINUX_CERT_DIR + fileName
+			let cert = await this._readCertFromPem(filepath)
 			if (arg.serialNumber === cert.serialNumber) return filepath
 		}
 	}
 
-	_readCertFromPem(filepath) {
+	static async _readCertFromPem(filepath) {
+		let pem = await fs.readFile(filepath)
+		return forge.pki.certificateFromPem(pem)
 	}
 
 	static async install(arg) {
-		arg = this._processArg(arg)
+		arg = new CertStruct(arg)
 		switch (process.platform) {
 			case 'win32':
-				if (arg.crtPath) {
-					await exec(`certutil -addstore -user -f root "${arg.crtPath}"`)
-				} else if (arg.cert) {
+				if (arg.path) {
+					await exec(`certutil -addstore -user -f root "${arg.path}"`)
+				} else if (arg.pem) {
 					var tempPath = `temp-${Date.now()}-${Math.random()}.crt`
-					await fs.writeFile(tempPath, arg.cert)
+					await fs.writeFile(tempPath, arg.pem)
 					await exec(`certutil -addstore -user -f root "${tempPath}"`)
 					await fs.unlink(tempPath)
 				} else {
@@ -80,26 +127,26 @@ export class CertStore {
 				console.warn('selfsigned-ca: CertStore.install() not yet implemented on this platform')
 				return // TODO
 			default:
-				// copy crt file to
-				await ensureDirectory(`/usr/share/ca-certificates/extra/`)
-				await fs.writeFile(`/usr/share/ca-certificates/extra/${arg.filename}`, arg.cert)
+				await ensureDirectory(LINUX_CERT_DIR)
+				var targetPath = LINUX_CERT_DIR + arg.name + '.crt'
+				if (!arg.pem && arg.path)
+					arg.pem = await fs.readFile(arg.path)
+				await fs.writeFile(targetPath, arg.pem)
 				await exec('update-ca-certificates')
-				//await exec('sudo update-ca-certificates')
 				return
 		}
 	}
 
 	static async isInstalled(arg) {
-		arg = this._processArg(arg)
+		arg = new CertStruct(arg)
 		switch (process.platform) {
 			case 'win32':
 				try {
-					//await exec(`certutil -verifystore -user root ${arg.serialNumber}`)
-					let {stdout} = await exec(`certutil -verifystore -user root ${arg.serialNumber}`)
-					console.log(stdout)
-					//return stdout.toLowerCase().includes(arg.hash)
+					await arg.ensureCertReadFromFs()
+					await exec(`certutil -verifystore -user root ${arg.serialNumber}`)
 					return true
 				} catch(err) {
+					//console.error(err)
 					return false
 				}
 			case 'darwin':
@@ -110,17 +157,19 @@ export class CertStore {
 		}
 	}
 
-	static async delete() {
+	static async delete(arg) {
+		arg = new CertStruct(arg)
 		switch (process.platform) {
 			case 'win32':
-				console.warn('selfsigned-ca: CertStore.delete() not yet implemented on this platform')
-				return // TODO
+				await arg.ensureCertReadFromFs()
+				await exec(`certutil -delstore -user root ${arg.serialNumber}`)
+				return
 			case 'darwin':
 				console.warn('selfsigned-ca: CertStore.delete() not yet implemented on this platform')
 				return // TODO
 			default:
-				var filepath = await this._findLinuxCert(arg)
-				if (filepath) await fs.unlink(filepath)
+				var targetPath = await this._findLinuxCert(arg)
+				if (targetPath) await fs.unlink(targetPath)
 				return false
 		}
 	}
