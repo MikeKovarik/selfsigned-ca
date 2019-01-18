@@ -131,7 +131,7 @@ export class Cert {
 				await exec(`certutil -addstore -user -f root "${this.crtPath}"`)
 				return
 			case 'darwin':
-				console.warn('selfsigned-ca: darwin is not supported yet')
+				console.warn('selfsigned-ca: install() is not (yet) supported on this platform')
 				return // TODO
 			default:
 				// copy crt file to
@@ -143,18 +143,17 @@ export class Cert {
 	}
 
 	async isInstalled() {
-		if (!this.certificate)
-			await this.load()
 		try {
+			if (!this.certificate)
+				await this.load()
 			switch (process.platform) {
 				case 'win32':
 					let {stdout} = await exec(`certutil -verifystore -user root ${this.serialNumber}`)
 					return stdout.includes(this.thumbPrint)
-				case 'darwin':
-					console.warn('selfsigned-ca: darwin is not supported yet')
-					return // TODO
+				//case 'darwin':
+				//	return // TODO
 				default:
-					console.warn('selfsigned-ca: unsupported platform')
+					console.warn('selfsigned-ca: isInstalled() is not (yet) supported on this platform')
 					return // TODO
 			}
 		} catch(err) {
