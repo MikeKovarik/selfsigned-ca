@@ -98,14 +98,11 @@ export class CertStore {
 		let filenames = await fs.readdir(LINUX_CERT_DIR)
 		for (let fileName of filenames) {
 			let filepath = LINUX_CERT_DIR + fileName
-			let cert = await this._readCertFromPem(filepath)
-			if (arg.serialNumber === cert.serialNumber) return filepath
+			let pem = await fs.readFile(filepath)
+			let certificate = forge.pki.certificateFromPem(pem)
+			if (arg.serialNumber === certificate.serialNumber)
+				return filepath
 		}
-	}
-
-	static async _readCertFromPem(filepath) {
-		let pem = await fs.readFile(filepath)
-		return forge.pki.certificateFromPem(pem)
 	}
 
 	static async install(arg) {
