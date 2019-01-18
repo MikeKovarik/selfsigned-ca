@@ -2,7 +2,10 @@ import forge from 'node-forge'
 import path from 'path'
 import util from 'util'
 import _fs from 'fs'
+import {CertStore} from './cert-store.mjs'
 
+
+export {CertStore} from './cert-store.mjs'
 
 // not using fs.promise because we're supporting Node 8.
 var fs = {}
