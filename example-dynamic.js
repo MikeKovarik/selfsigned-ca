@@ -1,5 +1,6 @@
 var https = require('https')
-var {Cert} = require('selfsigned-ca')
+//var {Cert} = require('selfsigned-ca')
+var {Cert} = require('./index.js')
 var os = require('os')
 var dns = require('dns')
 var util = require('util')
@@ -76,11 +77,15 @@ async function loadOrCreateCerts() {
 			console.log('saved root CA certificate at')
 			console.log(path.join(process.cwd(), rootCaCert.crtPath))
 			console.log(path.join(process.cwd(), rootCaCert.keyPath))
+			try {
 			// Install the newly created CA to device's keychain so that all server certificates
 			// signed by the CA are automatically trusted and green.
 			console.log('installing root CA')
 			await rootCaCert.install()
 			console.log('installed root CA')
+			} catch(err) {
+				console.log('root CA could not be installed & trusted on the device')
+			}
 		}
 		console.log(`creating server certificate for ${lanIp}`)
 		await serverCert.create(serverCertOptions, rootCaCert)

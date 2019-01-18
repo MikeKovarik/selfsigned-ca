@@ -1,5 +1,6 @@
 var https = require('https')
-var {create, createRootCa} = require('selfsigned-ca')
+//var {create, createRootCa} = require('selfsigned-ca')
+var {create, createRootCa} = require('./index.js')
 
 
 createCertificates()
@@ -30,10 +31,13 @@ async function createCertificates() {
 
 	console.log('creating root CA cert')
 	var rootCaCert = await createRootCa(rootCaCertOptions)
-	console.log('CA certificate was just created, on installed. HTTPS connection will be untrusted by the browser')
+	console.log('CA certificate was just created, but not installed. HTTPS connection will be untrusted by the browser')
 	console.log('creating server certificate and signing it using CA cert')
 	var serverCert = await create(serverCertOptions, rootCaCert)
 	console.log('certifiactes ready')
+
+	console.log('rootCaCert.serialNumber', rootCaCert.serialNumber)
+	console.log('rootCaCert.thumbPrint', rootCaCert.thumbPrint)
 
 	return serverCert
 }
