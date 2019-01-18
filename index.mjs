@@ -76,12 +76,19 @@ async function ensureDirectory(directory) {
 export class Cert {
 
 	constructor(crtPath, keyPath) {
-		var {dir, base} = path.parse(crtPath)
-		if (base.endsWith('.crt'))  base = base.slice(0, -4)
-		if (base.endsWith('.cert')) base = base.slice(0, -5)
-		this.name = base
-		this.crtPath = crtPath
-		this.keyPath = keyPath || path.join(dir, this.name + '.key')
+		if (crtPath !== undefined)
+			this.handleNameAndPath(crtPath, keyPath)
+	}
+
+	handleNameAndPath(crtPath, keyPath) {
+		var {dir, base, ext, name} = path.parse(crtPath)
+		if (ext !== '.crt' && ext !== '.cer' && ext !== '.cert') {
+			name = base
+			ext = '.crt'
+		}
+		this.name = name
+		this.crtPath = path.join(dir, name + ext)
+		this.keyPath = keyPath || path.join(dir, name + '.key')
 	}
 
 	generatePems() {
@@ -122,6 +129,7 @@ export class Cert {
 			case 'win32':
 				await this.save()
 				await exec(`certutil -addstore -user -f root "${this.crtPath}"`)
+				return
 			case 'darwin':
 				console.warn('selfsigned-ca: darwin is not supported yet')
 				return // TODO
@@ -130,6 +138,7 @@ export class Cert {
 				await ensureDirectory(`/usr/share/ca-certificates/extra/`)
 				await fs.writeFile(`/usr/share/ca-certificates/extra/${this.name}.crt`, this.cert)
 				//return exec('sudo update-ca-certificates')
+				return
 		}
 	}
 
@@ -256,12 +265,16 @@ export class Cert {
 
 }
 
-export function createRootCa(options) {
-	var cert = new Cert()
+export function createRootCa(...args) {
+	// name is optional and only needed if certs are stored to/loaded from fs.
+	var [options, name] = args.reverse()
+	var cert = new Cert(name)
 	return cert.createRootCa(options)
 }
 
-export function create(options, caCert) {
-	var cert = new Cert()
+export function create(...args) {
+	// name is optional and only needed if certs are stored to/loaded from fs.
+	var [caCert, options, name] = args.reverse()
+	var cert = new Cert(name)
 	return cert.create(options, caCert)
 }
