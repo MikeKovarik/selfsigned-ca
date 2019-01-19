@@ -37,7 +37,6 @@ class CertStruct {
 			else
 				this.path = arg
 		} else if (typeof arg === 'object') {
-			this.fromForgeObject(arg)
 			this.path = arg.path || arg.path
 			this.serialNumber = arg.serialNumber
 			this.pem = arg.pem || arg.cert || arg.data
