@@ -25,11 +25,15 @@
     "type": "git",
     "url": "https://github.com/MikeKovarik/selfsigned-ca.git"
   },
+  "scripts": {
+	  "build": "rollup -c",
+	  "warch": "rollup -c -w"
+  },
   "devDependencies": {
     "rollup": "^0.64.1",
     "rollup-plugin-notify": "^1.0.3"
   },
   "dependencies": {
-    "node-forge": "^0.7.5"
+    "node-forge": "^0.7.6"
   }
 }

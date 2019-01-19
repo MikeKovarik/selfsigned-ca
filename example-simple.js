@@ -30,10 +30,10 @@ async function createCertificates() {
 	}
 
 	console.log('creating root CA cert')
-	var rootCaCert = await createRootCa(rootCaCertOptions)
+	var rootCaCert = createRootCa(rootCaCertOptions)
 	console.log('CA certificate was just created, but not installed. HTTPS connection will be untrusted by the browser')
 	console.log('creating server certificate and signing it using CA cert')
-	var serverCert = await create(serverCertOptions, rootCaCert)
+	var serverCert = create(serverCertOptions, rootCaCert)
 	console.log('certifiactes ready')
 
 	console.log('rootCaCert.serialNumber', rootCaCert.serialNumber)
