@@ -2,10 +2,8 @@ import forge from 'node-forge'
 import path from 'path'
 import util from 'util'
 import _fs from 'fs'
-import {CertStore} from './cert-store.mjs'
+import {CertStore} from 'cert-store'
 
-
-export {CertStore} from './cert-store.mjs'
 
 // not using fs.promise because we're supporting Node 8.
 var fs = {}
@@ -159,34 +157,39 @@ export class Cert {
 		this.certificate.validity.notAfter.setDate(this.certificate.validity.notBefore.getDate() + options.days)
 	}
 
-	async createRootCa(options = {}) {
-		this.options = options
+	_applyOptions(options = {}) {
+		// options argument can be replaced by commonName string (in most cases 'localhost')
+		if (typeof options === 'string')
+			this.options = {subject: {commonName: options}}
+		else
+			this.options = options
+	}
+
+	createRootCa(options) {
+		this._applyOptions(options)
 		this.init()
 		// All cert data we've got from user or we use defaults.
-		var subject    = toNameValue(options.subject || defaultSubject)
-		var issuer     = toNameValue(options.issuer || options.subject || defaultSubject)
-		var extensions = [...caExtensions, ...(options.extensions || [])]
+		var subject    = toNameValue(this.options.subject || defaultSubject)
+		var issuer     = toNameValue(this.options.issuer || this.options.subject || defaultSubject)
+		var extensions = [...caExtensions, ...(this.options.extensions || [])]
 		// Inflate the cert with acquired data.
 		this.certificate.setSubject(subject)
 		this.certificate.setIssuer(issuer)
 		this.certificate.setExtensions(extensions)
 		// Finalize creating the cert and convert it to string PEM format.
-		this.certificate.sign(this.privateKey, getAlgorithm(options))
+		this.certificate.sign(this.privateKey, getAlgorithm(this.options))
 		return this.generatePems()
 	}
 
 	// second argument caCert is optional and can be used if the certificate is to be signed
 	// by another certificate. Root CA in this case.
-	async create(options = {}, caCert) {
-		// options argument can be replaced by commonName string (in most cases 'localhost')
-		if (typeof options === 'string')
-			options = {subject: {commonName: options}}
-		this.options = options
+	create(options, caCert) {
+		this._applyOptions(options)
 		this.init()
 		// Add subject info (commonName of the domain). Use issuer info from CA cert.
-		var subject    = toNameValue(options.subject || defaultSubject)
+		var subject    = toNameValue(this.options.subject || defaultSubject)
 		var issuer     = caCert ? caCert.certificate.subject.attributes : subject
-		var extensions = options.extensions || []
+		var extensions = this.options.extensions || []
 		// Inflate the cert with acquired data.
 		this.certificate.setIssuer(issuer)
 		this.certificate.setSubject(subject)
