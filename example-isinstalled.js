@@ -6,7 +6,7 @@ main().catch(console.error)
 
 async function main() {
 
-	var certPath = './anchora.root-ca.crt'
+	var certPath = './testsrv.root-ca.crt'
 
 	var installed = await CertStore.isInstalled(certPath)
 	console.log('isInstalled()', installed)

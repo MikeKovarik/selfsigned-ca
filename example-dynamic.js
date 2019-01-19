@@ -23,16 +23,16 @@ async function main() {
 async function loadOrCreateCerts() {
 
 	// Single ROOT CA for the user.
-	var rootCaCert = new Cert('anchora.root-ca')
+	var rootCaCert = new Cert('testsrv.root-ca')
 	// Create new certificate for each IP from which the server is hosted.
 	var lanIp = (await dns.lookup(os.hostname())).address
-	var serverCert = new Cert(`anchora.localhost.${lanIp}`)
+	var serverCert = new Cert(`testsrv.localhost.${lanIp}`)
 
 	var rootCaCertOptions = {
 		days: 9999,
 		algorithm: 'sha256',
 		subject: {
-			commonName: 'Anchora HTTP Server',
+			commonName: 'Test Server HTTP Server',
 			organizationName: 'Mutiny',
 		}
 	}
