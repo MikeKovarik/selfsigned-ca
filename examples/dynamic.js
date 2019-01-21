@@ -1,6 +1,6 @@
 var https = require('https')
 //var {Cert} = require('selfsigned-ca')
-var {Cert} = require('./index.js')
+var {Cert} = require('../index.js')
 var os = require('os')
 var dns = require('dns')
 var util = require('util')

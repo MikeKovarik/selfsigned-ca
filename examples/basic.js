@@ -1,6 +1,6 @@
 var https = require('https')
 //var {create, createRootCa} = require('selfsigned-ca')
-var {createRootCa} = require('./index.js')
+var {createRootCa} = require('../index.js')
 
 
 var rootCaCert = createRootCa('My Personal CA')
