@@ -14,7 +14,7 @@ Following demo creates CA Root certificate and uses it to sign second certificat
 
 ```js
 var https = require('https')
-var {create, Cert} = require('selfsigned-ca')
+var {Cert} = require('selfsigned-ca')
 
 // Root CA certificate used to sign other certificates.
 // argument(s) point to .crt and .key file paths - ./selfsigned.root-ca.crt & ./selfsigned.root-ca.key
@@ -65,7 +65,7 @@ async function loadRootCertificate() {
 
 async function createRootCertificate() {
   // Couldn't load existing root CA certificate. Generate new one.
-  await rootCaCert.createRootCa({
+  rootCaCert.createRootCa({
     subject: {
       commonName: 'My Trusted Certificate Authority',
     }
@@ -89,7 +89,7 @@ async function createServerCertificate() {
       ]
     }]
   }
-  await serverCert.create(serverCertOptions, rootCaCert)
+  serverCert.create(serverCertOptions, rootCaCert)
   await serverCert.save()
 }
 

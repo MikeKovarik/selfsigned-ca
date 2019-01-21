@@ -71,7 +71,7 @@ async function loadOrCreateCerts() {
 		} catch(err) {
 			// Couldn't load existing root CA certificate. Generate new one.
 			console.log(`couldn't load existing CA cert, creating new one`)
-			await rootCaCert.createRootCa(rootCaCertOptions)
+			rootCaCert.createRootCa(rootCaCertOptions)
 			console.log('created root CA')
 			await rootCaCert.save()
 			console.log('saved root CA certificate at')
@@ -88,7 +88,7 @@ async function loadOrCreateCerts() {
 			}
 		}
 		console.log(`creating server certificate for ${lanIp}`)
-		await serverCert.create(serverCertOptions, rootCaCert)
+		serverCert.create(serverCertOptions, rootCaCert)
 		console.log(`created server cert`)
 		await serverCert.save()
 		console.log('saved server certificate at')
