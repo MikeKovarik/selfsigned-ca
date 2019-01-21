@@ -12,7 +12,7 @@ async function createCertificates() {
 
 	var rootCaCertOptions = {
 		subject: {
-			commonName: 'My Trusted Certificate Authority',
+			commonName: 'My TEST Certificate Authority',
 		}
 	}
 

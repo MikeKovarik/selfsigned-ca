@@ -2,7 +2,7 @@ import forge from 'node-forge'
 import path from 'path'
 import util from 'util'
 import _fs from 'fs'
-import {CertStore} from 'cert-store'
+import rootstore from 'cert-store'
 
 
 // not using fs.promise because we're supporting Node 8.
@@ -125,17 +125,12 @@ export class Cert {
 
 	async install() {
 		await this.save()
-		await CertStore.install(this)
+		await rootstore.install(this)
 	}
 
 	async isInstalled() {
-		try {
-			if (!this.certificate) await this.load()
-			return await CertStore.isInstalled(this)
-		} catch(err) {
-			console.error(err)
-			return false
-		}
+		if (!this.certificate) await this.load()
+		return await rootstore.isInstalled(this)
 	}
 
 	////////////////////////////
