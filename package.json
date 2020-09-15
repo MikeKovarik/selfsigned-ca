@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "cert-store": "^1.0.0",
-    "node-forge": "^0.7.6"
+    "node-forge": "^0.10.0"
   }
 }
